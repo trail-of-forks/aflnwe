@@ -3199,11 +3199,9 @@ static void perform_dry_run(char** argv) {
 
 static void link_or_copy(u8* old_path, u8* new_path) {
 
-  s32 i = link(old_path, new_path);
+  s32 i = 0;
   s32 sfd, dfd;
   u8* tmp;
-
-  if (!i) return;
 
   sfd = open(old_path, O_RDONLY);
   if (sfd < 0) PFATAL("Unable to open '%s'", old_path);
