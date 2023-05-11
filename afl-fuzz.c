@@ -355,6 +355,7 @@ u8* net_ip;
 u32 net_port;
 EXP_ST u8 session_virgin_bits[MAP_SIZE];     /* Regions yet untouched while the SUT is still running */
 EXP_ST u8 *cleanup_script; /* script to clean up the environment of the SUT -- make fuzzing more deterministic */
+EXP_ST u8 *trim_suffix; /* trimmed test cases can be saved in distinct files, in order to preserve the original timestamps */
 
 //flags
 u8 use_net = 0;
@@ -4872,14 +4873,31 @@ static u8 trim_case(char** argv, struct queue_entry* q, u8* in_buf) {
 
     s32 fd;
 
-    unlink(q->fname); /* ignore errors */
+    if(trim_suffix == NULL) {
 
-    fd = open(q->fname, O_WRONLY | O_CREAT | O_EXCL, 0600);
+        unlink(q->fname); /* ignore errors */
 
-    if (fd < 0) PFATAL("Unable to create '%s'", q->fname);
+        fd = open(q->fname, O_WRONLY | O_CREAT | O_EXCL, 0600);
 
-    ck_write(fd, in_buf, q->len, q->fname);
-    close(fd);
+        if (fd < 0) PFATAL("Unable to create '%s'", q->fname);
+
+        ck_write(fd, in_buf, q->len, q->fname);
+        close(fd);
+
+    }
+    else if(strcmp(trim_suffix,"") != 0) {
+
+        u8 * trimmed_test_fname = alloc_printf("%s%s", q->fname, trim_suffix);
+
+        fd = open(trimmed_test_fname, O_WRONLY | O_CREAT | O_EXCL, 0600);
+
+        if (fd < 0) PFATAL("Unable to create '%s'", q->fname);
+
+        ck_write(fd, in_buf, q->len, q->fname);
+        close(fd);
+
+        ck_free(trimmed_test_fname);
+    }
 
     memcpy(trace_bits, clean_trace, MAP_SIZE);
     update_bitmap_score(q);
@@ -8038,7 +8056,7 @@ int main(int argc, char** argv) {
   gettimeofday(&tv, &tz);
   srandom(tv.tv_sec ^ tv.tv_usec ^ getpid());
 
-  while ((opt = getopt(argc, argv, "+i:o:f:m:t:T:dnCB:S:M:x:QN:D:W:w:Kc:")) > 0)
+  while ((opt = getopt(argc, argv, "+i:o:f:m:t:T:dnCB:S:M:x:QN:D:W:w:Kc:z:")) > 0)
 
     switch (opt) {
 
@@ -8243,6 +8261,12 @@ int main(int argc, char** argv) {
 
         if (cleanup_script) FATAL("Multiple -c options not supported");
         cleanup_script = optarg;
+        break;
+
+      case 'z': /* saving trimmed test case */
+
+        if (trim_suffix) FATAL("Multiple -z options not supported");
+        trim_suffix = optarg;
         break;
 
       default:
