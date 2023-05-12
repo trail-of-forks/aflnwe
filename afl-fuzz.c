@@ -460,6 +460,12 @@ char *get_test_case(long *fsize)
   s32 fd = out_fd;
   if (out_file != NULL)
     fd = open(out_file, O_RDONLY);
+  
+  if (fd < 0) {
+      *fsize = 0;
+      char *buf = ck_alloc(0);
+      return buf;
+  }
 
   *fsize = lseek(fd, 0, SEEK_END);
   lseek(fd, 0, SEEK_SET);
