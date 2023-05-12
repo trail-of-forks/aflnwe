@@ -4873,32 +4873,6 @@ static u8 trim_case(char** argv, struct queue_entry* q, u8* in_buf) {
 
     s32 fd;
 
-    if(trim_suffix == NULL) {
-
-        unlink(q->fname); /* ignore errors */
-
-        fd = open(q->fname, O_WRONLY | O_CREAT | O_EXCL, 0600);
-
-        if (fd < 0) PFATAL("Unable to create '%s'", q->fname);
-
-        ck_write(fd, in_buf, q->len, q->fname);
-        close(fd);
-
-    }
-    else if(strcmp(trim_suffix,"") != 0) {
-
-        u8 * trimmed_test_fname = alloc_printf("%s%s", q->fname, trim_suffix);
-
-        fd = open(trimmed_test_fname, O_WRONLY | O_CREAT | O_EXCL, 0600);
-
-        if (fd < 0) PFATAL("Unable to create '%s'", q->fname);
-
-        ck_write(fd, in_buf, q->len, q->fname);
-        close(fd);
-
-        ck_free(trimmed_test_fname);
-    }
-
     memcpy(trace_bits, clean_trace, MAP_SIZE);
     update_bitmap_score(q);
 
