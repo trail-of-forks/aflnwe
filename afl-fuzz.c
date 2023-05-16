@@ -463,7 +463,7 @@ char *get_test_case(long *fsize)
   /* allocate buffer to read the file */
   char *buf = ck_alloc(test_case_buf_len);
   *fsize = test_case_buf_len;
-  memcpy(buf, test_case_buf, test_case_buf_len)
+  memcpy(buf, test_case_buf, test_case_buf_len);
 
   return buf;
 }
