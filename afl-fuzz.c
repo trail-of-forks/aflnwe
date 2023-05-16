@@ -289,6 +289,10 @@ static u32 a_extras_cnt;              /* Total number of tokens available */
 
 static u8* (*post_handler)(u8* buf, u32* len);
 
+char *test_case_buf = 0;
+u32 test_case_buf_len = 0;
+u32 max_test_case_buf_len = 1073741824;
+
 /* Interesting values, as per config.h */
 
 static s8  interesting_8[]  = { INTERESTING_8 };
@@ -456,23 +460,10 @@ int parse_net_config(u8* net_config, u8* protocol, u8** ip_address, u32* port)
 
 char *get_test_case(long *fsize)
 {
-  /* open generated file */
-  s32 fd = out_fd;
-  if (out_file != NULL)
-    fd = open(out_file, O_RDONLY);
-  
-  if (fd < 0) {
-      *fsize = 0;
-      char *buf = ck_alloc(0);
-      return buf;
-  }
-
-  *fsize = lseek(fd, 0, SEEK_END);
-  lseek(fd, 0, SEEK_SET);
-
   /* allocate buffer to read the file */
-  char *buf = ck_alloc(*fsize);
-  ck_read(fd, buf, *fsize, "input file");
+  char *buf = ck_alloc(test_case_buf_len);
+  *fsize = test_case_buf_len;
+  memcpy(buf, test_case_buf, test_case_buf_len)
 
   return buf;
 }
@@ -2773,27 +2764,12 @@ static u8 run_target(char** argv, u32 timeout) {
 
 static void write_to_testcase(void* mem, u32 len) {
 
-  s32 fd = out_fd;
+  if (len > max_test_case_buf_len) {
+    PFATAL("Test case too large");
+  }
 
-  if (out_file) {
-
-    unlink(out_file); /* Ignore errors. */
-
-    fd = open(out_file, O_WRONLY | O_CREAT | O_EXCL, 0600);
-
-    if (fd < 0) PFATAL("Unable to create '%s'", out_file);
-
-  } else lseek(fd, 0, SEEK_SET);
-
-  ck_write(fd, mem, len, out_file);
-
-  if (!out_file) {
-
-    if (ftruncate(fd, len)) PFATAL("ftruncate() failed");
-    lseek(fd, 0, SEEK_SET);
-
-  } else close(fd);
-
+  memcpy(test_case_buf, mem, len);
+  test_case_buf_len = len;
 }
 
 
@@ -7503,6 +7479,7 @@ EXP_ST void setup_stdio_file(void) {
 
   ck_free(fn);
 
+  test_case_buf = malloc(max_test_case_buf_len);
 }
 
 
