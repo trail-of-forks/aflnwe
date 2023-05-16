@@ -5353,30 +5353,6 @@ static u8 fuzz_one(char** argv) {
 
   }
 
-  /************
-   * TRIMMING *
-   ************/
-
-  if (!dumb_mode && !queue_cur->trim_done) {
-
-    u8 res = trim_case(argv, queue_cur, in_buf);
-
-    if (res == FAULT_ERROR)
-      FATAL("Unable to execute target application");
-
-    if (stop_soon) {
-      cur_skipped_paths++;
-      goto abandon_entry;
-    }
-
-    /* Don't retry trimming, even if it failed. */
-
-    queue_cur->trim_done = 1;
-
-    if (len != queue_cur->len) len = queue_cur->len;
-
-  }
-
   memcpy(out_buf, in_buf, len);
 
   /*********************
